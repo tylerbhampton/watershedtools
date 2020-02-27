@@ -69,7 +69,7 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     if(nchar(HUC02reg)>2){HUC02reg=substr(HUC02reg,1,2)}
     
     
-    nhd12shps=sf::st_read(file.path(WBDstagepath,paste0("WBD_",HUC02reg,"_HU2_Shape"),"WBDHU12.shp"))
+    nhd12shps=sf::st_read(file.path(WBDstagepath,paste0("WBD_",HUC02reg,"_HU2_Shape"),"Shape","WBDHU12.shp"))
     
     upstreamHUC12shapes=subset(nhd12shps,HUC12%in%upstreamHUC12s$HUC_12)
     
