@@ -121,7 +121,7 @@ run_qgis(alg = "grass7:r.watershed",
          load_output = FALSE,
          show_output_paths=FALSE)
 
-flowacc=raster(file.path(tempdir(), "acc.tif"))
+flowacc=raster(file.path(temppath, "acc.tif"))
 flowacc=calc(flowacc,function(x){ifelse(x>0,log10(x),NA)})
 names(flowacc)="acc"
 plot(flowacc)
@@ -134,7 +134,7 @@ Plotting the log of flow accumulation, we can see several rivers shown in green 
 We will use these calculated raster products to draw watersheds from several points on the landscape. First, we will calculate a list of points on the raster where flow accumulation is greater than our threshold (1000), and then use *lapply* to snap each of our points to the raster coordinates.
 
 ```{r message=FALSE, warning=FALSE}
-points=list(
+zionpoints=list(
   c(-113.1634, 37.2176),
   c(-113.1,37.22833),
   c(-113.17,37.23083),
@@ -145,8 +145,8 @@ points=list(
 r.pts <- as.data.frame(rasterToPoints(flowacc))
 subset=r.pts[r.pts$acc>3,]
 
-points.s=lapply(1:length(points),function(i){
-  p=points[[i]]
+points.s=lapply(1:length(zionpoints),function(i){
+  p=zionpoints[[i]]
   row=which.min(abs(subset$x-p[1])+abs(subset$y-p[2]))
   return(subset[row,1:2])
 })
@@ -157,7 +157,7 @@ Next, for each point, we will use the flow direction raster to create a watershe
 
 ```{r message=FALSE, warning=FALSE}
 
-for(i in 1:length(points)){
+for(i in 1:length(zionpoints)){
   run_qgis(alg = "grass7:r.water.outlet",
            input=file.path(temppath, "flowdir.tif"),
            coordinates=paste(as.vector(unlist(points.s[[i]])),collapse=","),
@@ -184,7 +184,7 @@ coordinates(point.d)=c("lon","lat")
 crs(point.d)=proj4string(dem)
 
 basins.d=do.call("rbind",lapply(
-  1:length(points),function(i){
+  1:length(zionpoints),function(i){
     l=st_read(file.path(tempdir(), paste0("basin",i,".shp")),quiet = T)
     l$value=i
     l=l[1,]
@@ -211,6 +211,26 @@ ggplot()+
   ggsn::blank()+theme(legend.position = "n")+
   ggtitle("Zion National Park\nNorth Creek Watershed")
 
+```
+## Compare RQGIS3 and nhdplustools
+
+```{r}
+zionNHDwatersheds=do.call("rbind",lapply(1:5,function(i){
+  NHDWBDws(method = "point",point = zionpoints[[i]],
+         WBDstagepath = "B:/MASTERDATA/data_Hydrology/hydrology_shapefiles/USA_WBD_WatershedBoundaryDataset")
+}))
+zionNHDwatersheds$value=1:5
+
+
+ggplot()+
+  geom_tile(data=as.data.frame(rasterToPoints(hillshade)),aes(x=x,y=y,fill=hillshade))+
+  scale_fill_gradientn(colors=c("white",1))+
+  geom_tile(data=subset(as.data.frame(rasterToPoints(flowacc)),acc>1000 | acc<{-100}),aes(x=x,y=y))+
+  geom_sf(data=zion,col="white",fill="transparent")+
+  geom_sf(data=zionNHDwatersheds,aes(col=factor(value)),fill="transparent")+
+  geom_point(data=as.data.frame(point.d),aes(x=lon,y=lat),size=2,col=2)+
+  ggsn::blank()+theme(legend.position = "n")+
+  ggtitle("Zion National Park\nNorth Creek Watershed")
 ```
 
 

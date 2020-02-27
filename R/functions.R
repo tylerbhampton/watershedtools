@@ -45,7 +45,7 @@ getupstreamflowlines=function(lon,lat){
 NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
                   WBDstagepath){
   if(method=="point"){
-    flowline=getupstreamflowlines(lon=p[1],lat=p[2])
+    flowline=getupstreamflowlines(lon=point[1],lat=point[2])
   }
   upstreamHUC12s=subset(HUC12_Outlet_COMIDs_CONUS,COMID%in%flowline$nhdplus_comid)
   
@@ -54,11 +54,9 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     print("Proceed: No Upstream Flowlines")
     subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$nhdplus_comid, 
                                   output_file = tempfile(fileext = ".gpkg"), 
-                                  nhdplus_data = "download") 
-    flowline = sf::read_sf(subset_gpkg, "NHDFlowline_Network") 
-    catchment = sf::read_sf(subset_gpkg, "CatchmentSP") 
-    catchmentW = catchment %>% sf::st_buffer(.,0) %>% sf::st_union() %>% sf::st_as_sf() 
-    #create a shape file from the plot in the specified location with the file name as the lake name
+                                  nhdplus_data = "download",status=FALSE) 
+    catchment = subset_gpkg$CatchmentSP
+    catchmentW = catchment %>% sf::st_buffer(.,0) %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
     return(catchmentW)
   }
   if(nrow(upstreamHUC12s)==0 & !returnsingle){print("Error - No Upstream Flowlines")}
@@ -69,12 +67,12 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     if(nchar(HUC02reg)>2){HUC02reg=substr(HUC02reg,1,2)}
     
     
-    nhd12shps=sf::st_read(file.path(WBDstagepath,paste0("WBD_",HUC02reg,"_HU2_Shape"),"Shape","WBDHU12.shp"))
+    nhd12shps=sf::st_read(file.path(WBDstagepath,paste0("WBD_",HUC02reg,"_HU2_Shape"),"Shape","WBDHU12.shp"),quiet = TRUE)
     
     upstreamHUC12shapes=subset(nhd12shps,HUC12%in%upstreamHUC12s$HUC_12)
     
-    watershedW = upstreamHUC12shapes %>% sf::st_union() %>% sf::st_as_sf() 
-    return(watershedW)
+    catchmentW = upstreamHUC12shapes %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
+    return(catchmentW)
   }
 }
 

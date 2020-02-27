@@ -28,13 +28,6 @@ p=c(-99.189990,40.071521)
 
 wsshape=NHDWBDws(method = "point",point = p,
          WBDstagepath = "B:/MASTERDATA/data_Hydrology/hydrology_shapefiles/USA_WBD_WatershedBoundaryDataset")
-#> Reading layer `WBDHU12' from data source `B:\MASTERDATA\data_Hydrology\hydrology_shapefiles\USA_WBD_WatershedBoundaryDataset\WBD_10_HU2_Shape\WBDHU12.shp' using driver `ESRI Shapefile'
-#> Simple feature collection with 13725 features and 20 fields
-#> geometry type:  POLYGON
-#> dimension:      XY
-#> bbox:           xmin: -113.9381 ymin: 37.0246 xmax: -90.11422 ymax: 49.73909
-#> epsg (SRID):    4269
-#> proj4string:    +proj=longlat +datum=NAD83 +no_defs
 
 
 leaflet(data = wsshape) %>% leaflet::addPolygons() %>% leaflet::addProviderTiles("Esri.WorldImagery")
@@ -227,7 +220,7 @@ run_qgis(alg = "grass7:r.watershed",
          load_output = FALSE,
          show_output_paths=FALSE)
 
-flowacc=raster(file.path(tempdir(), "acc.tif"))
+flowacc=raster(file.path(temppath, "acc.tif"))
 flowacc=calc(flowacc,function(x){ifelse(x>0,log10(x),NA)})
 names(flowacc)="acc"
 plot(flowacc)
@@ -248,7 +241,7 @@ threshold (1000), and then use *lapply* to snap each of our points to
 the raster coordinates.
 
 ``` r
-points=list(
+zionpoints=list(
   c(-113.1634, 37.2176),
   c(-113.1,37.22833),
   c(-113.17,37.23083),
@@ -259,8 +252,8 @@ points=list(
 r.pts <- as.data.frame(rasterToPoints(flowacc))
 subset=r.pts[r.pts$acc>3,]
 
-points.s=lapply(1:length(points),function(i){
-  p=points[[i]]
+points.s=lapply(1:length(zionpoints),function(i){
+  p=zionpoints[[i]]
   row=which.min(abs(subset$x-p[1])+abs(subset$y-p[2]))
   return(subset[row,1:2])
 })
@@ -271,7 +264,7 @@ watershed boundary, and then convert that raster to a vector shapefile.
 
 ``` r
 
-for(i in 1:length(points)){
+for(i in 1:length(zionpoints)){
   run_qgis(alg = "grass7:r.water.outlet",
            input=file.path(temppath, "flowdir.tif"),
            coordinates=paste(as.vector(unlist(points.s[[i]])),collapse=","),
@@ -300,7 +293,7 @@ coordinates(point.d)=c("lon","lat")
 crs(point.d)=proj4string(dem)
 
 basins.d=do.call("rbind",lapply(
-  1:length(points),function(i){
+  1:length(zionpoints),function(i){
     l=st_read(file.path(tempdir(), paste0("basin",i,".shp")),quiet = T)
     l$value=i
     l=l[1,]
@@ -335,4 +328,28 @@ ggplot()+
   ggtitle("Zion National Park\nNorth Creek Watershed")
 ```
 
-![](man/figures/README-unnamed-chunk-12-1.png)<!-- -->
+![](man/figures/README-unnamed-chunk-12-1.png)<!-- --> \#\# Compare
+RQGIS3 and nhdplustools
+
+``` r
+zionNHDwatersheds=do.call("rbind",lapply(1:5,function(i){
+  NHDWBDws(method = "point",point = zionpoints[[i]],
+         WBDstagepath = "B:/MASTERDATA/data_Hydrology/hydrology_shapefiles/USA_WBD_WatershedBoundaryDataset")
+}))
+#> [1] "Proceed: No Upstream Flowlines"
+#> [1] "Proceed: No Upstream Flowlines"
+zionNHDwatersheds$value=1:5
+
+
+ggplot()+
+  geom_tile(data=as.data.frame(rasterToPoints(hillshade)),aes(x=x,y=y,fill=hillshade))+
+  scale_fill_gradientn(colors=c("white",1))+
+  geom_tile(data=subset(as.data.frame(rasterToPoints(flowacc)),acc>1000 | acc<{-100}),aes(x=x,y=y))+
+  geom_sf(data=zion,col="white",fill="transparent")+
+  geom_sf(data=zionNHDwatersheds,aes(col=factor(value)),fill="transparent")+
+  geom_point(data=as.data.frame(point.d),aes(x=lon,y=lat),size=2,col=2)+
+  ggsn::blank()+theme(legend.position = "n")+
+  ggtitle("Zion National Park\nNorth Creek Watershed")
+```
+
+![](man/figures/README-unnamed-chunk-13-1.png)<!-- -->
