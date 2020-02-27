@@ -3,7 +3,11 @@
 
 # watershedtools
 
-The goal of `watershedtools` is to \#\# Installation
+The goal of `watershedtools` is to delineate watersheds using packages
+like nhdplusTools and others. Most methods will work best for the
+continental U.S.
+
+## Installation
 
 You can install watershedtools from github using devtools:
 
