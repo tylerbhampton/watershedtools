@@ -18,7 +18,10 @@ devtools::install_github("tylerbhampton/watershedtools")
 ## Test Watershed Delineation
 
 ``` r
-watershedtools::loadpackages(packages = c("watershedtools","ggplot2","sf","leaflet"))
+library(watershedtools)
+library(ggplot2)
+library(leaflet)
+library(sf)
 
 # Point for Harlan County Lake on the Republican River, Nebraska USA
 p=c(-99.189990,40.071521)

@@ -5,14 +5,6 @@
 #   Test Package:              'Ctrl + Shift + T'
 
 
-#' @title loadpackages
-#' @return Loads multiple packages
-#' @param packages [character] character vector of packages to call with library()
-#' @md
-#' @export
-
-loadpackages=function(packages){for(p in packages){library(p,character.only=T,quietly=T)}}
-
 #' @title HUC12 and NHDPlus Version 2 COMID Associations
 #' @return The dataset HUC12_COMID_PU_CONUS.dbf contains HUC12 associations 
 #' for every NHDPlus Version 2 reach except for Coastlines.
