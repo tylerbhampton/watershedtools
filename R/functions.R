@@ -17,16 +17,18 @@
 #' @return Retrieves upstream NHDplus flowlines
 #' @param lon start point longitude
 #' @param lat start point longitude
+#' @param distkm distance upstream to retrieve flowlines
 #' @md
 #' @export
 
-getupstreamflowlines=function(lon,lat){
+getupstreamflowlines=function(lon,lat,distkm){
   start_point <- sf::st_sfc(sf::st_point(c(lon,lat)), crs = 4326)
   start_comid <- nhdplusTools::discover_nhdplus_id(start_point) 
   flowline <- nhdplusTools::navigate_nldi(list(featureSource = "comid", 
                                  featureID = start_comid), 
-                            mode = "upstreamTributaries", 
-                            data_source = "")
+                            mode = "upstreamTributaries",
+                            distance_km = distkm
+                            )
   return(flowline)
 }
 
@@ -43,16 +45,17 @@ getupstreamflowlines=function(lon,lat){
 #' @importFrom magrittr "%>%"
 
 NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
+                  distkm=2000,
                   WBDstagepath){
   if(method=="point"){
-    flowline=getupstreamflowlines(lon=point[1],lat=point[2])
+    flowline=getupstreamflowlines(lon=point[1],lat=point[2],distkm)
   }
-  upstreamHUC12s=subset(HUC12_Outlet_COMIDs_CONUS,COMID%in%flowline$nhdplus_comid)
+  upstreamHUC12s=subset(HUC12_Outlet_COMIDs_CONUS,COMID%in%flowline$UT_flowlines$nhdplus_comid)
   
   
   if(nrow(upstreamHUC12s)==0 & returnsingle){
     print("Proceed: No Upstream Flowlines")
-    subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$nhdplus_comid, 
+    subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$UT_flowlines$nhdplus_comid, 
                                   output_file = tempfile(fileext = ".gpkg"), 
                                   nhdplus_data = "download",status=FALSE) 
     catchment = subset_gpkg$CatchmentSP
@@ -71,7 +74,11 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     
     upstreamHUC12shapes=subset(nhd12shps,HUC12%in%upstreamHUC12s$HUC_12)
     
-    catchmentW = upstreamHUC12shapes %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
+    catchmentW = upstreamHUC12shapes %>% 
+      sf::st_union() %>% 
+      sf::st_as_sf() %>% 
+      st_transform(.,4326) %>%
+      nngeo::st_remove_holes()
     return(catchmentW)
   }
 }

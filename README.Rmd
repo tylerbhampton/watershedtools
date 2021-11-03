@@ -36,7 +36,7 @@ library(sf)
 p=c(-99.189990,40.071521)
 
 wsshape=NHDWBDws(method = "point",point = p,
-         WBDstagepath = "B:/MASTERDATA/data_Hydrology/hydrology_shapefiles/USA_WBD_WatershedBoundaryDataset")
+         WBDstagepath = "D:/clone/USA_WBD_WatershedBoundaryDataset")
 
 
 leaflet(data = wsshape) %>% leaflet::addPolygons() %>% leaflet::addProviderTiles("Esri.WorldImagery")
@@ -191,6 +191,7 @@ basins.d=do.call("rbind",lapply(
     return(l)
   }
 ))
+st_crs(basins.d)=st_crs(zion)
 
 zion=system.file("vector/zion.gpkg", package = "spDataLarge")%>%
   st_read()%>%st_transform(.,proj4string(dem))

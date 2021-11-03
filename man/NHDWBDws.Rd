@@ -9,6 +9,7 @@ NHDWBDws(
   flowline = NULL,
   point = NULL,
   returnsingle = TRUE,
+  distkm = 2000,
   WBDstagepath
 )
 }

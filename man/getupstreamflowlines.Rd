@@ -4,12 +4,14 @@
 \alias{getupstreamflowlines}
 \title{getupstreamflowlines}
 \usage{
-getupstreamflowlines(lon, lat)
+getupstreamflowlines(lon, lat, distkm)
 }
 \arguments{
 \item{lon}{start point longitude}
 
 \item{lat}{start point longitude}
+
+\item{distkm}{distance upstream to retrieve flowlines}
 }
 \value{
 Retrieves upstream NHDplus flowlines
