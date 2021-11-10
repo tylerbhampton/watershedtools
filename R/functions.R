@@ -58,6 +58,7 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
   
   if(nrow(upstreamHUC12s)==0 & returnsingle){
     print("Proceed: No upstream HUC12 watersheds")
+    print("Proceed: Download from NHDplus")
     subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$UT_flowlines$nhdplus_comid, 
                                   output_file = tempfile(fileext = ".gpkg"), 
                                   flowline_only = FALSE,
@@ -66,8 +67,12 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
                                   nhdplus_data = "download") 
     catchment = subset_gpkg$CatchmentSP
     print(paste0("Found ",nrow(catchment)," upstream subwatersheds"))
-    catchmentW = catchment %>% sf::st_buffer(.,0) %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
-    return(catchmentW)
+    catchmentW = catchment %>% 
+      #sf::st_buffer(.,0) %>% 
+      sf::st_union() %>% 
+      sf::st_as_sf() %>% 
+      st_transform(.,4326)
+    print("Finished: Merge watersheds")
   }
   if(nrow(upstreamHUC12s)==0 & !returnsingle){print("Error - No Upstream Flowlines")}
   if(nrow(upstreamHUC12s)>0){
@@ -93,7 +98,7 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
       st_transform(.,4326) %>%
       nngeo::st_remove_holes()
     print("Finished: Merge watersheds")
-    return(catchmentW)
   }
+  return(catchmentW)
 }
 
