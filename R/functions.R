@@ -24,11 +24,13 @@
 getupstreamflowlines=function(lon,lat,distkm){
   start_point <- sf::st_sfc(sf::st_point(c(lon,lat)), crs = 4326)
   start_comid <- nhdplusTools::discover_nhdplus_id(start_point) 
+  print("comid identified")
   flowline <- nhdplusTools::navigate_nldi(list(featureSource = "comid", 
                                  featureID = start_comid), 
                             mode = "upstreamTributaries",
                             distance_km = distkm
                             )
+  print(paste0("Found ",nrow(flowline$UT_flowlines)," flowline features"))
   return(flowline)
 }
 
@@ -49,12 +51,13 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
                   WBDstagepath){
   if(method=="point"){
     flowline=getupstreamflowlines(lon=point[1],lat=point[2],distkm)
+    print("Flowlines retrieved")
   }
   upstreamHUC12s=subset(HUC12_Outlet_COMIDs_CONUS,COMID%in%flowline$UT_flowlines$nhdplus_comid)
-  
+  print(paste0("Found ",nrow(upstreamHUC12s)," upstream HUC12 watersheds"))
   
   if(nrow(upstreamHUC12s)==0 & returnsingle){
-    print("Proceed: No Upstream Flowlines")
+    print("Proceed: No upstream HUC12 watersheds")
     subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$UT_flowlines$nhdplus_comid, 
                                   output_file = tempfile(fileext = ".gpkg"), 
                                   flowline_only = FALSE,
@@ -62,6 +65,7 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
                                   status=FALSE,
                                   nhdplus_data = "download") 
     catchment = subset_gpkg$CatchmentSP
+    print(paste0("Found ",nrow(catchment)," upstream subwatersheds"))
     catchmentW = catchment %>% sf::st_buffer(.,0) %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
     return(catchmentW)
   }
@@ -81,12 +85,14 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     }))
     
     upstreamHUC12shapes=subset(nhd12shps,HUC12%in%upstreamHUC12s$HUC_12)
-    
+    print(paste0("Found ",nrow(upstreamHUC12shapes)," upstream HUC12 watersheds"))
+    print("Proceed: Merge watersheds")
     catchmentW = upstreamHUC12shapes %>% 
       sf::st_union() %>% 
       sf::st_as_sf() %>% 
       st_transform(.,4326) %>%
       nngeo::st_remove_holes()
+    print("Finished: Merge watersheds")
     return(catchmentW)
   }
 }
