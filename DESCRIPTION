@@ -1,7 +1,7 @@
 Package: watershedtools
 Type: Package
 Title: Delineating Watersheds with R
-Version: 1.1.0
+Version: 1.1.1
 Author: Tyler B. Hampton
 Maintainer: Tyler B. Hampton <email@email.com>
 Description: This package includes tools to delineate watersheds using several different methods. Most methods work best for the continental U.S., such as those using nhdtools.

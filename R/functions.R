@@ -57,7 +57,10 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
     print("Proceed: No Upstream Flowlines")
     subset_gpkg <- nhdplusTools::subset_nhdplus(comids = flowline$UT_flowlines$nhdplus_comid, 
                                   output_file = tempfile(fileext = ".gpkg"), 
-                                  nhdplus_data = "download",status=FALSE) 
+                                  flowline_only = FALSE,
+                                  return_data = TRUE,
+                                  status=FALSE,
+                                  nhdplus_data = "download") 
     catchment = subset_gpkg$CatchmentSP
     catchmentW = catchment %>% sf::st_buffer(.,0) %>% sf::st_union() %>% sf::st_as_sf() %>% st_transform(.,4326)
     return(catchmentW)
