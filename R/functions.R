@@ -68,12 +68,17 @@ NHDWBDws=function(method="flowline",flowline=NULL,point=NULL,returnsingle=TRUE,
   if(nrow(upstreamHUC12s)==0 & !returnsingle){print("Error - No Upstream Flowlines")}
   if(nrow(upstreamHUC12s)>0){
     
-    HUC02reg=as.character(unique(upstreamHUC12s$NHDPLUSREG))
-    if(nchar(HUC02reg)==1){HUC02reg=paste0("0",HUC02reg)}
-    if(nchar(HUC02reg)>2){HUC02reg=substr(HUC02reg,1,2)}
+    HUC02reg = as.character(unique(upstreamHUC12s$NHDPLUSREG))
+    HUC02reg = as.vector(sapply(HUC02reg,function(hx){
+      if(nchar(hx)==1){return(paste0("0",hx))}
+      if(nchar(hx)>2){return(substr(hx,1,2))}
+      if(nchar(hx)==2){return(hx)}
+    }))
     
     
-    nhd12shps=sf::st_read(file.path(WBDstagepath,paste0("WBD_",HUC02reg,"_HU2_Shape"),"Shape","WBDHU12.shp"),quiet = TRUE)
+    nhd12shps = do.call("rbind",lapply(HUC02reg,function(hx){
+      sf::st_read(file.path(WBDstagepath,paste0("WBD_",hx,"_HU2_Shape"),"Shape","WBDHU12.shp"),quiet = TRUE)
+    }))
     
     upstreamHUC12shapes=subset(nhd12shps,HUC12%in%upstreamHUC12s$HUC_12)
     
